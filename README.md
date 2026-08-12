@@ -104,14 +104,23 @@ docker compose down
 
 **Execução de cada categoria de teste:**
 
-| Cenário | Evidência |
-|---|---|
-| Happy Path | `docs/evidence/06-happypathtest.png` |
-| Idempotência | `docs/evidence/07-idempotencytest.png` |
-| Reprocessamento | `docs/evidence/08-reprocessingtest.png` |
-| Dead Letter Queue | `docs/evidence/09-dlqtest.png` |
-| Consistência de Cache | `docs/evidence/10-cacheconsistencytest.png` |
-| Consistência sob Volume | `docs/evidence/11-volumeconsistencytest.png` |
+*Happy Path*
+![Happy Path](docs/evidence/06-happypathtest.png)
+
+*Idempotência*
+![Idempotência](docs/evidence/07-idempotencytest.png)
+
+*Reprocessamento*
+![Reprocessamento](docs/evidence/08-reprocessingtest.png)
+
+*Dead Letter Queue*
+![Dead Letter Queue](docs/evidence/09-dlqtest.png)
+
+*Consistência de Cache*
+![Consistência de Cache](docs/evidence/10-cacheconsistencytest.png)
+
+*Consistência sob Volume*
+![Consistência sob Volume](docs/evidence/11-volumeconsistencytest.png)
 
 **Relatório Allure consolidado — 7 casos de teste, 100% de sucesso:**
 
