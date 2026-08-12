@@ -81,48 +81,101 @@ docker compose down
 
 ## 📸 Evidências de execução
 
-**Estrutura do projeto no IntelliJ:**
+> Cada imagem abaixo vem acompanhada do comando (ou ação) exato que a gerou, para permitir reprodução independente.
+
+**Estrutura do projeto no IntelliJ**
+
+```
+Project View do IntelliJ IDEA (painel lateral esquerdo)
+```
 
 ![Estrutura do projeto](docs/evidence/00-estrutura-projeto.png)
 
-**Infraestrutura Docker de pé (Kafka, PostgreSQL, Redis):**
+**Infraestrutura Docker de pé (Kafka, PostgreSQL, Redis)**
+
+```bash
+docker compose up -d
+```
 
 ![Docker Compose up](docs/evidence/01-docker-compose-up.png)
+
+```bash
+docker ps
+```
+
 ![Docker ps — 3 containers healthy](docs/evidence/02-docker-ps-healthy.png)
 
-**Teste individual de conexão com cada serviço:**
+**Teste individual de conexão com cada serviço**
+
+```bash
+docker exec messaging-postgres pg_isready -U messaging_user -d messaging_db
+docker exec messaging-redis redis-cli ping
+docker exec messaging-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+```
 
 ![Testes individuais de conexão](docs/evidence/03-docker-testes-individuais.png)
 
-**Persistência confirmada no PostgreSQL (tabela `orders`):**
+**Persistência confirmada no PostgreSQL (tabela `orders`)**
+
+```sql
+SELECT * FROM orders ORDER BY created_at DESC;
+```
 
 ![Tabela orders no PostgreSQL](docs/evidence/04-postgresql-orders.png)
 
-**Cache populado no Redis após a execução dos testes:**
+**Cache populado no Redis após a execução dos testes**
+
+```bash
+docker exec messaging-redis redis-cli KEYS "*"
+```
 
 ![Chaves no Redis](docs/evidence/05-redis-keys.png)
 
-**Execução de cada categoria de teste:**
+**Execução de cada categoria de teste**
 
 *Happy Path*
+```bash
+mvn test -Dtest=HappyPathTest
+```
 ![Happy Path](docs/evidence/06-happypathtest.png)
 
 *Idempotência*
+```bash
+mvn test -Dtest=IdempotencyTest
+```
 ![Idempotência](docs/evidence/07-idempotencytest.png)
 
 *Reprocessamento*
+```bash
+mvn test -Dtest=ReprocessingTest
+```
 ![Reprocessamento](docs/evidence/08-reprocessingtest.png)
 
 *Dead Letter Queue*
+```bash
+mvn test -Dtest=DlqTest
+```
 ![Dead Letter Queue](docs/evidence/09-dlqtest.png)
 
 *Consistência de Cache*
+```bash
+mvn test -Dtest=CacheConsistencyTest
+```
 ![Consistência de Cache](docs/evidence/10-cacheconsistencytest.png)
 
 *Consistência sob Volume*
+```bash
+mvn test -Dtest=VolumeConsistencyTest
+```
 ![Consistência sob Volume](docs/evidence/11-volumeconsistencytest.png)
 
-**Relatório Allure consolidado — 7 casos de teste, 100% de sucesso:**
+**Relatório Allure consolidado — todas as 6 suítes juntas (7 casos de teste, 100% de sucesso)**
+
+> `HappyPathTest` contém 2 métodos de teste; as outras 5 suítes têm 1 cada — por isso o total de **casos de teste** (7) é maior que o total de **suítes/categorias** (6).
+
+```bash
+mvn test allure:serve
+```
 
 ![Allure — Visão geral](docs/evidence/12-allure-overview.png)
 ![Allure — Suítes detalhadas](docs/evidence/13-allure-suites.png)
