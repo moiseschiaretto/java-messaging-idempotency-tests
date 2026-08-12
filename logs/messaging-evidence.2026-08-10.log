@@ -1,6 +1,0 @@
-2026-08-10 22:11:24.957 [http-nio-8080-exec-1] INFO  com.moises.messaging.evidence - PUBLISHED topic=orders-topic idempotencyKey=teste-001 payload=com.moises.messaging.dto.OrderRequest@7097276
-2026-08-10 22:23:44.652 [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] INFO  com.moises.messaging.evidence - PERSISTED idempotencyKey=teste-001 orderId=bdb48260-f386-427d-bc54-109f01375251 status=RECEIVED
-2026-08-10 22:28:35.820 [http-nio-8080-exec-1] INFO  com.moises.messaging.evidence - PUBLISHED topic=orders-topic idempotencyKey=teste-002 payload=com.moises.messaging.dto.OrderRequest@29d204df
-2026-08-10 22:28:35.840 [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] INFO  com.moises.messaging.evidence - PERSISTED idempotencyKey=teste-002 orderId=797d5e85-1dbb-4943-a67c-192b7bf5fc4c status=RECEIVED
-2026-08-10 22:51:32.407 [http-nio-8080-exec-3] INFO  com.moises.messaging.evidence - PUBLISHED topic=orders-topic idempotencyKey=teste-001 payload=com.moises.messaging.dto.OrderRequest@711a66d4
-2026-08-10 22:51:32.433 [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] INFO  com.moises.messaging.evidence - DUPLICATE_IGNORED idempotencyKey=teste-001

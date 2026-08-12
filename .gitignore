@@ -1,0 +1,7 @@
+target/
+.idea/
+.allure/
+allure-results/
+ajcore.*.txt
+logs/
+*.class

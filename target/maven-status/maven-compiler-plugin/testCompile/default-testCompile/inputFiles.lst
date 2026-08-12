@@ -1,8 +1,0 @@
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\scenarios\CacheConsistencyTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\scenarios\DlqTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\scenarios\HappyPathTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\scenarios\IdempotencyTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\scenarios\ReprocessingTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\scenarios\VolumeConsistencyTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\support\AbstractIntegrationTest.java
-C:\projetos\java-messaging-idempotency-tests\src\test\java\com\moises\messaging\support\MessageTestHelper.java
