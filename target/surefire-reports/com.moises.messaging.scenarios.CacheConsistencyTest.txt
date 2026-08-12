@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.moises.messaging.scenarios.CacheConsistencyTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.72 s -- in com.moises.messaging.scenarios.CacheConsistencyTest

@@ -1,0 +1,68 @@
+# docker-compose.yml
+#
+# Sobe a infraestrutura necessaria para rodar a aplicacao LOCALMENTE
+# (fora dos testes automatizados). Os testes automatizados NAO usam este
+# arquivo — eles sobem seus proprios containers via Testcontainers, de forma
+# isolada e descartavel a cada execucao (ver AbstractIntegrationTest.java).
+#
+# Uso:
+#   docker compose up -d       # sobe Kafka, Redis e Postgres em background
+#   docker compose down        # derruba tudo
+#   docker compose down -v     # derruba tudo e apaga os volumes (dados)
+
+services:
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: messaging-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      # Modo KRaft: Kafka moderno nao depende mais de Zookeeper
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: messaging-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: messaging-postgres
+    environment:
+      POSTGRES_DB: messaging_db
+      POSTGRES_USER: messaging_user
+      POSTGRES_PASSWORD: messaging_pass
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U messaging_user -d messaging_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
