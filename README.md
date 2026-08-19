@@ -79,6 +79,61 @@ docker compose down
 
 ---
 
+## Mapa mental do projeto
+
+Visão consolidada do fluxo assíncrono completo: a requisição HTTP entra pelo `OrderController`, é publicada no Kafka pelo `OrderProducerService`, e processada de forma assíncrona pelo `OrderConsumerService` — que decide entre três caminhos (payload inválido → DLQ sem retry; duplicata → ignorada; pedido novo → persistido no PostgreSQL e cacheado no Redis). Em paralelo, os testes automatizados usam Testcontainers para subir instâncias isoladas e efêmeras de Kafka e PostgreSQL a cada execução — nunca a infraestrutura do `docker-compose.yml`, que serve apenas para rodar a aplicação manualmente.
+
+<img src="docs/evidence/15-mapa-mental-projeto.png" alt="Mapa mental do projeto java-messaging-idempotency-tests" width="900">
+
+## Por que estes cenários específicos?
+
+Cada teste deste projeto foi desenhado para provar, na prática, um comportamento que é comum — e crítico — em sistemas baseados em mensageria assíncrona:
+
+**Idempotência.** Em qualquer sistema distribuído, uma mensagem pode ser entregue mais de uma vez (retry de rede, reprocessamento manual, falha momentânea do consumer). Sem controle de idempotência, isso gera pedidos duplicados, cobranças duplicadas, estoque incorreto. O teste `IdempotencyTest` publica a mesma mensagem duas vezes e confirma que o sistema processa apenas a primeira, ignorando a segunda sem erro.
+
+**Reprocessamento.** Falhas transitórias acontecem (concorrência no banco, timeout momentâneo). Um sistema robusto tenta de novo automaticamente, sem intervenção manual, e sem duplicar o resultado quando a nova tentativa é bem-sucedida. O teste `ReprocessingTest` simula uma corrida de concorrência real e confirma que o mecanismo de retry do Kafka resolve o conflito sozinho.
+
+**Dead Letter Queue (DLQ).** Nem toda mensagem inválida se corrige tentando de novo — um payload malformado continuará malformado. Em vez de travar a fila inteira ou entrar em loop de tentativas inúteis, mensagens assim são desviadas para um tópico separado (a DLQ), para investigação posterior, sem bloquear o processamento das mensagens válidas. O teste `DlqTest` confirma esse desvio.
+
+**Consistência de cache.** Um cache desatualizado (stale) é pior do que não ter cache — o sistema passa a responder com dado errado. O teste `CacheConsistencyTest` confirma que, a cada escrita no banco, o cache Redis é atualizado de forma consistente com o dado real.
+
+**Consistência sob volume.** Um sistema pode funcionar bem com 1 mensagem e falhar silenciosamente com 200 (perda de mensagens, deadlocks, timeouts). O teste `VolumeConsistencyTest` publica um lote de 200 mensagens simultâneas e confirma que todas — sem exceção — são processadas e persistidas corretamente.
+
+## Stack
+
+- **Java 17** + **Spring Boot 3.3.4**
+- **Apache Kafka** (modo KRaft, sem Zookeeper) — mensageria
+- **PostgreSQL** + **Hibernate/JPA** — persistência
+- **Redis** — cache (estratégia cache-aside com invalidação)
+- **Spring Actuator + Micrometer** — observabilidade (métricas de mensagens processadas/ignoradas)
+- **JUnit 5**, **AssertJ**, **Awaitility** — testes de integração
+- **Allure Framework** — relatórios de teste
+- **Docker Compose** — orquestração da infraestrutura local
+
+## Estrutura
+
+```
+src/
+  main/java/com/moises/messaging/
+    config/       # configuração de Kafka (retry/DLQ) e Redis (serialização)
+    controller/   # endpoint REST de entrada (POST /orders)
+    dto/          # objetos de requisição/resposta
+    entity/       # entidade Order (JPA)
+    exception/    # exceções de domínio
+    repository/   # acesso a dados (Spring Data JPA)
+    service/      # regras de negócio: publicação, consumo, cache
+  test/java/com/moises/messaging/
+    scenarios/    # as 6 classes de teste, uma por cenário
+    support/      # infraestrutura de apoio compartilhada entre os testes
+docker-compose.yml
+pom.xml
+docs/evidence/    # capturas de tela da execução e dos relatórios
+```
+
+## Cobertura de cenários
+
+**6 categorias de teste**, cobrindo o ciclo completo de uma mensagem: publicação, consumo, validação, idempotência, retry, DLQ, persistência e cache — o conjunto de competências técnicas mais exigido em vagas de plataforma/enabling para times de e-commerce e integração de sistemas.
+
 ## 📸 Evidências de execução
 
 > Cada imagem abaixo vem acompanhada do comando (ou ação) exato que a gerou, para permitir reprodução independente.
@@ -182,58 +237,3 @@ mvn test allure:serve
 ![Allure — Gráficos](docs/evidence/14-allure-graphs.png)
 
 ---
-
-## Por que estes cenários específicos?
-
-Cada teste deste projeto foi desenhado para provar, na prática, um comportamento que é comum — e crítico — em sistemas baseados em mensageria assíncrona:
-
-**Idempotência.** Em qualquer sistema distribuído, uma mensagem pode ser entregue mais de uma vez (retry de rede, reprocessamento manual, falha momentânea do consumer). Sem controle de idempotência, isso gera pedidos duplicados, cobranças duplicadas, estoque incorreto. O teste `IdempotencyTest` publica a mesma mensagem duas vezes e confirma que o sistema processa apenas a primeira, ignorando a segunda sem erro.
-
-**Reprocessamento.** Falhas transitórias acontecem (concorrência no banco, timeout momentâneo). Um sistema robusto tenta de novo automaticamente, sem intervenção manual, e sem duplicar o resultado quando a nova tentativa é bem-sucedida. O teste `ReprocessingTest` simula uma corrida de concorrência real e confirma que o mecanismo de retry do Kafka resolve o conflito sozinho.
-
-**Dead Letter Queue (DLQ).** Nem toda mensagem inválida se corrige tentando de novo — um payload malformado continuará malformado. Em vez de travar a fila inteira ou entrar em loop de tentativas inúteis, mensagens assim são desviadas para um tópico separado (a DLQ), para investigação posterior, sem bloquear o processamento das mensagens válidas. O teste `DlqTest` confirma esse desvio.
-
-**Consistência de cache.** Um cache desatualizado (stale) é pior do que não ter cache — o sistema passa a responder com dado errado. O teste `CacheConsistencyTest` confirma que, a cada escrita no banco, o cache Redis é atualizado de forma consistente com o dado real.
-
-**Consistência sob volume.** Um sistema pode funcionar bem com 1 mensagem e falhar silenciosamente com 200 (perda de mensagens, deadlocks, timeouts). O teste `VolumeConsistencyTest` publica um lote de 200 mensagens simultâneas e confirma que todas — sem exceção — são processadas e persistidas corretamente.
-
-## Stack
-
-- **Java 17** + **Spring Boot 3.3.4**
-- **Apache Kafka** (modo KRaft, sem Zookeeper) — mensageria
-- **PostgreSQL** + **Hibernate/JPA** — persistência
-- **Redis** — cache (estratégia cache-aside com invalidação)
-- **Spring Actuator + Micrometer** — observabilidade (métricas de mensagens processadas/ignoradas)
-- **JUnit 5**, **AssertJ**, **Awaitility** — testes de integração
-- **Allure Framework** — relatórios de teste
-- **Docker Compose** — orquestração da infraestrutura local
-
-## Estrutura
-
-```
-src/
-  main/java/com/moises/messaging/
-    config/       # configuração de Kafka (retry/DLQ) e Redis (serialização)
-    controller/   # endpoint REST de entrada (POST /orders)
-    dto/          # objetos de requisição/resposta
-    entity/       # entidade Order (JPA)
-    exception/    # exceções de domínio
-    repository/   # acesso a dados (Spring Data JPA)
-    service/      # regras de negócio: publicação, consumo, cache
-  test/java/com/moises/messaging/
-    scenarios/    # as 6 classes de teste, uma por cenário
-    support/      # infraestrutura de apoio compartilhada entre os testes
-docker-compose.yml
-pom.xml
-docs/evidence/    # capturas de tela da execução e dos relatórios
-```
-
-## Mapa mental do projeto
-
-Visão consolidada do fluxo assíncrono completo: a requisição HTTP entra pelo `OrderController`, é publicada no Kafka pelo `OrderProducerService`, e processada de forma assíncrona pelo `OrderConsumerService` — que decide entre três caminhos (payload inválido → DLQ sem retry; duplicata → ignorada; pedido novo → persistido no PostgreSQL e cacheado no Redis). Em paralelo, os testes automatizados usam Testcontainers para subir instâncias isoladas e efêmeras de Kafka e PostgreSQL a cada execução — nunca a infraestrutura do `docker-compose.yml`, que serve apenas para rodar a aplicação manualmente.
-
-<img src="docs/evidence/15-mapa-mental-projeto.png" alt="Mapa mental do projeto java-messaging-idempotency-tests" width="900">
-
-## Cobertura de cenários
-
-**6 categorias de teste**, cobrindo o ciclo completo de uma mensagem: publicação, consumo, validação, idempotência, retry, DLQ, persistência e cache — o conjunto de competências técnicas mais exigido em vagas de plataforma/enabling para times de e-commerce e integração de sistemas.
