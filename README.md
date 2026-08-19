@@ -228,6 +228,12 @@ pom.xml
 docs/evidence/    # capturas de tela da execução e dos relatórios
 ```
 
+## Mapa mental do projeto
+
+Visão consolidada do fluxo assíncrono completo: a requisição HTTP entra pelo `OrderController`, é publicada no Kafka pelo `OrderProducerService`, e processada de forma assíncrona pelo `OrderConsumerService` — que decide entre três caminhos (payload inválido → DLQ sem retry; duplicata → ignorada; pedido novo → persistido no PostgreSQL e cacheado no Redis). Em paralelo, os testes automatizados usam Testcontainers para subir instâncias isoladas e efêmeras de Kafka e PostgreSQL a cada execução — nunca a infraestrutura do `docker-compose.yml`, que serve apenas para rodar a aplicação manualmente.
+
+<img src="docs/evidence/15-mapa-mental-projeto.png" alt="Mapa mental do projeto java-messaging-idempotency-tests" width="900">
+
 ## Cobertura de cenários
 
 **6 categorias de teste**, cobrindo o ciclo completo de uma mensagem: publicação, consumo, validação, idempotência, retry, DLQ, persistência e cache — o conjunto de competências técnicas mais exigido em vagas de plataforma/enabling para times de e-commerce e integração de sistemas.
